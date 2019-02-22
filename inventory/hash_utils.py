@@ -1,9 +1,8 @@
 import hashlib
-from pathlib import Path
-from typing import Union
+
+from inventory.types import PathType
 
 HASH_ALGORITHM = hashlib.md5
-PathType = Union[str, Path]
 
 
 def hash_bytes(data: bytes) -> str:
