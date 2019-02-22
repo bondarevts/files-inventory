@@ -6,7 +6,6 @@ from inventory.hash_utils import hash_file
 
 class FilesInventory:
     def __init__(self, folder: Path):
-        folder = Path(folder)
         self._inventory = {}
         for file in folder.iterdir():
             self._inventory.setdefault(hash_file(file), []).append(file)
