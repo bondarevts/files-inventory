@@ -84,6 +84,15 @@ class TestFilesInventory:
         assert len(matches) == 2
         assert {matches[0].name, matches[1].name} == {'file1', 'file3'}
 
+    def test_hidden_files(self, tmp_path):
+        test_files = create_files_structure(tmp_path, '''
+            file1:1
+            .file2:2
+            file3:3
+        ''')
+        assert FilesInventory(test_files.path).total_files() == 2
+        assert FilesInventory(test_files.path, hidden=True).total_files() == 3
+
     def test_files_count_empty_inventory(self, tmp_path):
         inventory = FilesInventory(tmp_path)
         assert inventory.total_files() == 0

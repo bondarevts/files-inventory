@@ -5,10 +5,10 @@ from inventory.hash_utils import hash_file
 
 
 class FilesInventory:
-    def __init__(self, folder: Path):
+    def __init__(self, folder: Path, *, hidden=False):
         self._files_count = 0
         self._inventory = {}
-        self._walk_folder(folder)
+        self._walk_folder(folder, hidden)
 
     def find(self, path: Path) -> Iterable[Path]:
         file_hash = hash_file(path)
@@ -22,10 +22,13 @@ class FilesInventory:
     def total_files(self) -> int:
         return self._files_count
 
-    def _walk_folder(self, folder: Path):
+    def _walk_folder(self, folder: Path, hidden: bool):
         for file in folder.iterdir():
+            if not hidden and file.name.startswith('.'):
+                continue
+
             if file.is_dir():
-                self._walk_folder(file)
+                self._walk_folder(file, hidden)
                 continue
 
             self._inventory.setdefault(hash_file(file), []).append(file)
