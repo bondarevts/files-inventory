@@ -1,5 +1,5 @@
-import tempfile
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Callable
 from typing import List
 from typing import Tuple
@@ -13,7 +13,7 @@ from inventory.inventory import FilesInventory
 
 @pytest.fixture
 def tmp_folder() -> Path:
-    with tempfile.TemporaryDirectory() as tmp_folder:
+    with TemporaryDirectory() as tmp_folder:
         yield Path(tmp_folder)
 
 
@@ -80,6 +80,14 @@ class TestFilesInventory:
         assert len(matches) == 2
         assert file1 in matches
         assert file3 in matches
+
+    def test_files_count_empty_inventory(self, inventory_with_files):
+        inventory, _ = inventory_with_files()
+        assert inventory.total_files() == 0
+
+    def test_files_count(self, inventory_with_files):
+        inventory, files = inventory_with_files(b'1', b'2', b'3', b'4', b'5')
+        assert inventory.total_files() == len(files)
 
     def test_find_duplicates(self, inventory_with_files):
         inventory, (file1, file2, file3, file4, file5, _) = inventory_with_files(
