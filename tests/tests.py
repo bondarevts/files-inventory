@@ -68,6 +68,22 @@ class TestFilesInventory:
         assert test_folder.files[0].path in matches
         assert test_folder.files[2].path in matches
 
+    def test_find_in_nested_folders(self, tmp_path):
+        same_content = 'content'
+        test_folder, test_file = create_files_structure(tmp_path, f'''
+            test_folder/
+                nested_folder/
+                    file1:{same_content}
+                    file2:X
+                file3:{same_content}
+            test_file:{same_content}
+        ''').files
+        inventory = FilesInventory(test_folder.path)
+        matches = list(inventory.find(test_file.path))
+        assert inventory.total_files() == 3
+        assert len(matches) == 2
+        assert {matches[0].name, matches[1].name} == {'file1', 'file3'}
+
     def test_files_count_empty_inventory(self, tmp_path):
         inventory = FilesInventory(tmp_path)
         assert inventory.total_files() == 0

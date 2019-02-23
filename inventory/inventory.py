@@ -8,9 +8,7 @@ class FilesInventory:
     def __init__(self, folder: Path):
         self._files_count = 0
         self._inventory = {}
-        for file in folder.iterdir():
-            self._inventory.setdefault(hash_file(file), []).append(file)
-            self._files_count += 1
+        self._walk_folder(folder)
 
     def find(self, path: Path) -> Iterable[Path]:
         file_hash = hash_file(path)
@@ -23,3 +21,12 @@ class FilesInventory:
 
     def total_files(self) -> int:
         return self._files_count
+
+    def _walk_folder(self, folder: Path):
+        for file in folder.iterdir():
+            if file.is_dir():
+                self._walk_folder(file)
+                continue
+
+            self._inventory.setdefault(hash_file(file), []).append(file)
+            self._files_count += 1
