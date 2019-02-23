@@ -74,9 +74,21 @@ def test_file_hash_different_content(create_file: Callable[[bytes], Path]):
 class TestFilesInventory:
     def test_find(self, inventory_with_files, create_file: Callable[[bytes], Path]):
         same_content = b'content'
-        inventory, file_names = inventory_with_files(same_content, b'.', same_content)
+        inventory, (file1, _, file3) = inventory_with_files(same_content, b'.', same_content)
         test_file = create_file(same_content)
         matches = list(inventory.find(test_file))
         assert len(matches) == 2
-        assert file_names[0] in matches
-        assert file_names[2] in matches
+        assert file1 in matches
+        assert file3 in matches
+
+    def test_find_duplicates(self, inventory_with_files):
+        inventory, (file1, file2, file3, file4, file5, _) = inventory_with_files(
+            b'group1', b'group2', b'group2', b'group1', b'group1', b'group3'
+        )
+        expected_group1 = {file1, file4, file5}
+        expected_group2 = {file2, file3}
+        duplicates = list(inventory.find_duplicates())
+        assert len(duplicates) == 2
+        group1, group2 = map(set, duplicates)
+        assert (group1 == expected_group1 and group2 == expected_group2
+                or group1 == expected_group2 and group2 == expected_group1)
