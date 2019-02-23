@@ -1,5 +1,4 @@
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Callable
 from typing import List
 from typing import Tuple
@@ -12,13 +11,7 @@ from inventory.inventory import FilesInventory
 
 
 @pytest.fixture
-def tmp_folder() -> Path:
-    with TemporaryDirectory() as tmp_folder:
-        yield Path(tmp_folder)
-
-
-@pytest.fixture
-def create_file(tmp_folder: Path) -> Callable[[bytes], Path]:
+def create_file(tmp_path: Path) -> Callable[[bytes], Path]:
     def get_new_name() -> str:
         nonlocal counter
         name = f'file{counter}'
@@ -26,7 +19,7 @@ def create_file(tmp_folder: Path) -> Callable[[bytes], Path]:
         return name
 
     def create(content: bytes) -> Path:
-        full_file_name = tmp_folder / get_new_name()
+        full_file_name = tmp_path / get_new_name()
         with open(full_file_name, 'wb') as f:
             f.write(content)
         return full_file_name
@@ -37,10 +30,10 @@ def create_file(tmp_folder: Path) -> Callable[[bytes], Path]:
 
 @pytest.fixture
 def inventory_with_files(
-        tmp_folder: Path, create_file: Callable[[bytes], Path]) -> Callable[..., Tuple[FilesInventory, List[Path]]]:
+        tmp_path: Path, create_file: Callable[[bytes], Path]) -> Callable[..., Tuple[FilesInventory, List[Path]]]:
     def create_inventory(*contents: bytes) -> Tuple[FilesInventory, List[Path]]:
         file_names = [create_file(content) for content in contents]
-        inventory = FilesInventory(tmp_folder)
+        inventory = FilesInventory(tmp_path)
         return inventory, file_names
 
     return create_inventory
