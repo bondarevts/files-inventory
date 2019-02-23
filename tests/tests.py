@@ -1,13 +1,12 @@
 from pathlib import Path
 from typing import Callable
-from typing import List
-from typing import Tuple
 
 import pytest
 
 from inventory.hash_utils import hash_bytes
 from inventory.hash_utils import hash_file
 from inventory.inventory import FilesInventory
+from tests.files_utils import create_files_structure
 
 
 @pytest.fixture
@@ -26,17 +25,6 @@ def create_file(tmp_path: Path) -> Callable[[bytes], Path]:
 
     counter = 0
     return create
-
-
-@pytest.fixture
-def inventory_with_files(
-        tmp_path: Path, create_file: Callable[[bytes], Path]) -> Callable[..., Tuple[FilesInventory, List[Path]]]:
-    def create_inventory(*contents: bytes) -> Tuple[FilesInventory, List[Path]]:
-        file_names = [create_file(content) for content in contents]
-        inventory = FilesInventory(tmp_path)
-        return inventory, file_names
-
-    return create_inventory
 
 
 def test_hash_same_bytes():
@@ -65,29 +53,46 @@ def test_file_hash_different_content(create_file: Callable[[bytes], Path]):
 
 
 class TestFilesInventory:
-    def test_find(self, inventory_with_files, create_file: Callable[[bytes], Path]):
-        same_content = b'content'
-        inventory, (file1, _, file3) = inventory_with_files(same_content, b'.', same_content)
-        test_file = create_file(same_content)
-        matches = list(inventory.find(test_file))
+    def test_find(self, tmp_path: Path):
+        same_content = 'content'
+        test_folder, test_file = create_files_structure(tmp_path, f'''
+            test_folder/
+                file1:{same_content}
+                file2:X
+                file3:{same_content}
+            test_file:{same_content}
+        ''').files
+        inventory = FilesInventory(test_folder.path)
+        matches = list(inventory.find(test_file.path))
         assert len(matches) == 2
-        assert file1 in matches
-        assert file3 in matches
+        assert test_folder.files[0].path in matches
+        assert test_folder.files[2].path in matches
 
-    def test_files_count_empty_inventory(self, inventory_with_files):
-        inventory, _ = inventory_with_files()
+    def test_files_count_empty_inventory(self, tmp_path):
+        inventory = FilesInventory(tmp_path)
         assert inventory.total_files() == 0
 
-    def test_files_count(self, inventory_with_files):
-        inventory, files = inventory_with_files(b'1', b'2', b'3', b'4', b'5')
-        assert inventory.total_files() == len(files)
+    def test_files_count(self, tmp_path):
+        inventory = FilesInventory(create_files_structure(tmp_path, '''
+            file1:1
+            file2:2
+            file3:3
+        ''').path)
+        assert inventory.total_files() == 3
 
-    def test_find_duplicates(self, inventory_with_files):
-        inventory, (file1, file2, file3, file4, file5, _) = inventory_with_files(
-            b'group1', b'group2', b'group2', b'group1', b'group1', b'group3'
-        )
-        expected_group1 = {file1, file4, file5}
-        expected_group2 = {file2, file3}
+    def test_find_duplicates(self, tmp_path):
+        files = create_files_structure(tmp_path, '''
+            file1:group1
+            file2:group2
+            file3:group2
+            file4:group1
+            file5:group1
+            file6:group3
+        ''')
+        inventory = FilesInventory(tmp_path)
+        file1, file2, file3, file4, file5, _ = files.files
+        expected_group1 = {file1.path, file4.path, file5.path}
+        expected_group2 = {file2.path, file3.path}
         duplicates = list(inventory.find_duplicates())
         assert len(duplicates) == 2
         group1, group2 = map(set, duplicates)
