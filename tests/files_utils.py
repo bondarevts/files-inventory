@@ -23,6 +23,12 @@ class Folder:
     path: Path
     files: List[Union[File, Folder]] = dataclasses.field(default_factory=list)
 
+    def __getattr__(self, item):
+        for file in self.files:
+            if file.path.name == item:
+                return file
+        raise AttributeError
+
 
 def create_files_structure(root_path: Path, description: str) -> Folder:
     def get_depth(line: str) -> int:

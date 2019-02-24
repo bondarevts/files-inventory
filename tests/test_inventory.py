@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Callable
+from typing import List
 
 import pytest
 
@@ -63,10 +64,10 @@ class TestFilesInventory:
             test_file:{same_content}
         ''').files
         inventory = FilesInventory(test_folder.path)
-        matches = list(inventory.find(test_file.path))
+        matches: List[Path] = list(inventory.find(test_file.path))
         assert len(matches) == 2
-        assert test_folder.files[0].path in matches
-        assert test_folder.files[2].path in matches
+        assert test_folder.file1.path in matches
+        assert test_folder.file3.path in matches
 
     def test_find_in_nested_folders(self, tmp_path):
         same_content = 'content'
@@ -79,7 +80,7 @@ class TestFilesInventory:
             test_file:{same_content}
         ''').files
         inventory = FilesInventory(test_folder.path)
-        matches = list(inventory.find(test_file.path))
+        matches: List[Path] = list(inventory.find(test_file.path))
         assert inventory.total_files() == 3
         assert len(matches) == 2
         assert {matches[0].name, matches[1].name} == {'file1', 'file3'}
@@ -95,6 +96,13 @@ class TestFilesInventory:
 
     def test_files_count_empty_inventory(self, tmp_path):
         inventory = FilesInventory(tmp_path)
+        assert inventory.total_files() == 0
+
+    def test_files_count_empty_folders(self, tmp_path):
+        inventory = FilesInventory(create_files_structure(tmp_path, '''
+            empty1/
+            empty2/
+        ''').path)
         assert inventory.total_files() == 0
 
     def test_files_count(self, tmp_path):
@@ -115,9 +123,10 @@ class TestFilesInventory:
             file6:group3
         ''')
         inventory = FilesInventory(tmp_path)
-        file1, file2, file3, file4, file5, _ = files.files
-        expected_group1 = {file1.path, file4.path, file5.path}
-        expected_group2 = {file2.path, file3.path}
+        assert len(files.files) == 6
+        expected_group1 = {files.file1.path, files.file4.path, files.file5.path}
+        expected_group2 = {files.file2.path, files.file3.path}
+
         duplicates = list(inventory.find_duplicates())
         assert len(duplicates) == 2
         group1, group2 = map(set, duplicates)
