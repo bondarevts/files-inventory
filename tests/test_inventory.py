@@ -20,8 +20,7 @@ def create_file(tmp_path: Path) -> Callable[[bytes], Path]:
 
     def create(content: bytes) -> Path:
         full_file_name = tmp_path / get_new_name()
-        with open(full_file_name, 'wb') as f:
-            f.write(content)
+        full_file_name.write_bytes(content)
         return full_file_name
 
     counter = 0

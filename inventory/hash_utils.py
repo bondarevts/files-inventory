@@ -11,5 +11,4 @@ def hash_bytes(data: bytes) -> str:
 
 
 def hash_file(file: Path) -> str:
-    with open(file, 'rb') as f:
-        return hash_bytes(f.read())
+    return hash_bytes(file.read_bytes())

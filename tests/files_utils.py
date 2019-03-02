@@ -14,8 +14,7 @@ class File:
     path: Path
 
     def read_content(self) -> str:
-        with open(self.path, 'rb') as f:
-            return f.read().decode()
+        return self.path.read_text()
 
 
 @dataclasses.dataclass
@@ -54,8 +53,7 @@ def create_files_structure(root_path: Path, description: str) -> Folder:
             assert line.count(':') == 1
             file_name, content = line.strip().split(':')
             file_path = parent.path / file_name
-            with open(file_path, 'wb') as file:
-                file.write(content.encode())
+            file_path.write_text(content)
             parent.files.append(File(file_path))
             current_line += 1
         return current_line
